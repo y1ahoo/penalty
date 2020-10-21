@@ -1,0 +1,12 @@
+nosmokepenalty\PenaltyController.class
+nosmokepenalty\PenaltyRepository.class
+nosmokepenalty\external\ProhibitService.class
+nosmokepenalty\PolicyHandler.class
+nosmokepenalty\Penaltied.class
+nosmokepenalty\external\Prohibit.class
+nosmokepenalty\config\kafka\KafkaProcessor.class
+nosmokepenalty\Penalty.class
+nosmokepenalty\PenaltyApplication.class
+nosmokepenalty\AbstractEvent$1.class
+nosmokepenalty\Prohibited.class
+nosmokepenalty\AbstractEvent.class
