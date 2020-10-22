@@ -67,4 +67,4 @@ spring:
           contentType: application/json
 api:
   point:
-    url: http://point:8080
+    url: http://skccuser21-point:8080
