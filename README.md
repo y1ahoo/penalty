@@ -293,19 +293,9 @@ public class PolicyHandler{
 
 ## CQRS
 
-고객관리 서비스(customercenter)의 시나리오인 체크인/포인트적립, 포인트결제에 따른 포인트차감 내역을 CQRS로 구현하었고 코드는 다음과 같다:
+고객관리 서비스(customercenter)의 시나리오인 체크인/포인트적립, 패널티 적립과 패널티 차감, 포인트결제에 따른 포인트차감, 패널티 내역을 CQRS로 구현하었고 코드는 다음과 같다:
 ```
-package nosmoke;
-
-import nosmoke.config.kafka.KafkaProcessor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.stereotype.Service;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
+package nosmokepenalty;
 
 @Service
 public class MypageViewHandler {
@@ -321,8 +311,8 @@ public class MypageViewHandler {
                 // view 객체 생성
                 Mypage mypage = new Mypage();
                 // view 객체에 이벤트의 Value 를 set 함
-                mypage.setCheckInId(checkIned.getId());
-                mypage.setSmokingAreaId(checkIned.getSmokingAreaId());
+                mypage.setUserId(checkIned.getId());
+                mypage.setSmokingAreaId(checkIned.getAreaId());
                 // view 레파지 토리에 save
                 mypageRepository.save(mypage);
             }
@@ -346,6 +336,22 @@ public class MypageViewHandler {
             e.printStackTrace();
         }
     }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenPenaltied_then_CREATE_3 (@Payload Penaltied penaltied) {
+        try {
+            if (penaltied.isMe()) {
+                // view 객체 생성
+                Mypage mypage = new Mypage();
+                // view 객체에 이벤트의 Value 를 set 함
+                mypage.setPenaltyId(penaltied.getId());
+                mypage.setPoint(penaltied.getPoint());
+                // view 레파지 토리에 save
+                mypageRepository.save(mypage);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
 
 
     @StreamListener(KafkaProcessor.INPUT)
@@ -353,11 +359,29 @@ public class MypageViewHandler {
         try {
             if (earned.isMe()) {
                 // view 객체 조회
-                List<Mypage> mypageList = mypageRepository.findByCheckInId(earned.getCheckInId());
+                List<Mypage> mypageList = mypageRepository.findByUserId(earned.getUserId());
                 for(Mypage mypage : mypageList){
                     // view 객체에 이벤트의 eventDirectValue 를 set 함
                     mypage.setEarnId(earned.getId());
                     mypage.setPoint(earned.getPoint());
+                    // view 레파지 토리에 save
+                    mypageRepository.save(mypage);
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenPenaltied_then_UPDATE_2(@Payload Penaltied penaltied) {
+        try {
+            if (penaltied.isMe()) {
+                // view 객체 조회
+                List<Mypage> mypageList = mypageRepository.findByPenaltyId(penaltied.getId());
+                for(Mypage mypage : mypageList){
+                    // view 객체에 이벤트의 eventDirectValue 를 set 함
+                    mypage.setPenaltyId(penaltied.getId());
+                    mypage.setPenaltyId(penaltied.getPoint());
                     // view 레파지 토리에 save
                     mypageRepository.save(mypage);
                 }
