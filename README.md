@@ -396,42 +396,42 @@ public class MypageViewHandler {
 
 ## 동기식 호출 과 Fallback 처리
 
-분석단계에서의 조건 중 하나로 포인트결제(pay)->포인트차감(point) 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
+분석단계에서의 조건 중 하나로 패널티적립(penalty)->패널티차감(point) 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
 
 - 결제서비스를 호출하기 위하여 Stub과 (FeignClient) 를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현
 
 ```
 @FeignClient(name="point", url="${api.point.url}")
-public interface DeductService {
+public interface ProhibitService {
 
-    @RequestMapping(method= RequestMethod.GET, path="/deducts")
-    public void pay(@RequestBody Deduct deduct);
+    @RequestMapping(method= RequestMethod.GET, path="/prohibits")
+    public void penalty(@RequestBody Prohibit prohibit);
 
 }
 ```
 
-- 주문을 받은 직후(@PostPersist) 결제를 요청하도록 처리
+- 패널티를 받은 직후(@PostPersist) 결제를 요청하도록 처리
 
 ```
     @PostPersist
     public void onPostPersist(){
-        Paid paid = new Paid();
-        BeanUtils.copyProperties(this, paid);
-        paid.publishAfterCommit();
+        Penaltied penaltied = new Penaltied();
+        BeanUtils.copyProperties(this, penaltied);
+        penaltied.publishAfterCommit();
 
         //Following code causes dependency to external APIs
         // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
 
-        nosmoke.external.Deduct deduct = new nosmoke.external.Deduct();
+        nosmokepenalty.external.Prohibit prohibit = new nosmokepenalty.external.Prohibit();
         // mappings goes here
-        deduct.setPoint(this.getPoint());
-        deduct.setPayId(this.getId());
-        PayApplication.applicationContext.getBean(nosmoke.external.DeductService.class)
-            .pay(deduct);
+        PenaltyApplication.applicationContext.getBean(nosmokepenalty.external.ProhibitService.class)
+            .penalty(prohibit);
+
+
     }
 ```
 
-- 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하며, point 시스템이 장애가 나면 주문도 못받는다는 것을 확인:
+- 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하며, point 시스템이 장애가 나면 패널티도 못받는다는 것을 확인:
 
 
 ```
@@ -456,54 +456,52 @@ http http://localhost:8083/pays point=100   #Success
 ## 비동기식 호출 / 시간적 디커플링 / 장애격리 / 최종 (Eventual) 일관성 테스트
 
 
-체크아웃이 이루어진 후에 point 서비스로 이를 알려주는 행위는 동기식이 아니라 비 동기식으로 처리하여 point 서비스의 처리를 위하여 체크인/아웃이 블로킹 되지 않아도록 처리한다.
+패널티적립이 이루어진 후에 penalty 서비스로 이를 알려주는 행위는 동기식이 아니라 비 동기식으로 처리하여 penalty 서비스의 처리를 위하여 체크인/아웃이 블로킹 되지 않아도록 처리한다.
 
  
 ```
     @PostPersist
     public void onPostPersist(){
-        CheckIned checkIned = new CheckIned();
-        BeanUtils.copyProperties(this, checkIned);
-        checkIned.publishAfterCommit();
+        Penaltied penaltied = new Penaltied();
+        BeanUtils.copyProperties(this, penaltied);
+        penaltied.publishAfterCommit();
 
 
     }
 
     @PostUpdate
     public void onPostUpdate(){
-        if(this.getStatus()==null){
-            CheckOuted checkOuted = new CheckOuted();
-            BeanUtils.copyProperties(this, checkOuted);
-            checkOuted.publishAfterCommit();
-        }
+        Prohibited prohibited = new Prohibited();
+        BeanUtils.copyProperties(this, prohibited);
+        prohibited.publishAfterCommit();
 
+
+    }
 
     }
 ```
 
-- point 서비스에서는 체크아웃 이벤트에 대해서 이를 수신하여 자신의 정책을 처리하도록 PolicyHandler 를 구현한다:
+- point 서비스에서는 penaltied 이벤트에 대해서 이를 수신하여 자신의 정책을 처리하도록 PolicyHandler 를 구현한다:
 
 ```
     @Autowired
-    EarnRepository EarnRepository;
-
+    ProhibitRepository ProhibitRepository;
+    
     @StreamListener(KafkaProcessor.INPUT)
-    public void wheneverCheckOuted_CheckOut(@Payload CheckOuted checkOuted){
+    public void wheneverProhibited_Prohibited(@Payload Prohibited prohibited){
 
-        if(checkOuted.isMe()){
+        if(prohibited.isMe()){
+            Prohibit prohibit = new Prohibit();
+            prohibit.setPenaltyId(prohibited.getId());
+            prohibit.setPoint(prohibited.getPoint());
 
-            Earn earn = new Earn();
-            earn.setCheckInId(checkOuted.getId());
-            earn.setPoint(checkOuted.getPoint());
-            //earn.setStatus(checkOuted.getStatus());
-
-            EarnRepository.save(earn);
+            ProhibitRepository.save(prohibit);
         }
     }
 
 ```
 
-checkIn 시스템은 포인트적립/사용과 완전히 분리되어있으며, 이벤트 수신에 따라 처리되기 때문에, point 서비스가 유지보수로 인해 잠시 내려간 상태라도 주문을 받는데 문제가 없다.
+penalty 시스템은 포인트적립/사용과 완전히 분리되어있으며, 이벤트 수신에 따라 처리되기 때문에, point 서비스가 유지보수로 인해 잠시 내려간 상태라도 주문을 받는데 문제가 없다.
 
 ```
 # point 서비스 를 잠시 내려놓음 (ctrl+c)
@@ -525,7 +523,7 @@ http localhost:8081/checkIns/1     # 모든 체크인 상태가 "EARNED"로 확�
 
 ## Gateway를 통한 진입점 통일
 
-gateway를 통해 checkIn, point, pay, customercenter 등 모든 서비스에 진입할 수 있도록 yaml 파일에 적용
+gateway를 통해 checkIn, point, pay, penalty, customercenter 등 모든 서비스에 진입할 수 있도록 yaml 파일에 적용
 
 ```
 spring:
@@ -534,21 +532,25 @@ spring:
     gateway:
       routes:
         - id: checkIn
-          uri: http://checkIn:8080
+          uri: http://skccuer21-checkIn:8080
           predicates:
             - Path=/checkIns/** 
         - id: point
-          uri: http://point:8080
+          uri: http://skccuer21-point:8080
           predicates:
-            - Path=/deducts/**,/earns/**
+            - Path=/deducts/**,/earns/**,/prohibits/**
         - id: pay
-          uri: http://pay:8080
+          uri: http://skccuer21-pay:8080
           predicates:
             - Path=/pays/** 
         - id: customercenter
-          uri: http://customercenter:8080
+          uri: http://skccuer21-customercenter:8080
           predicates:
             - Path= /mypages/**
+        - id: penalty
+          uri: http://skccuer21-penalty:8080
+          predicates:
+            - Path=/penalties/** 
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -562,14 +564,14 @@ spring:
 
 server:
   port: 8080
+  
 ```
-
 gateway를 통한 진입점 통일 테스트
 
 ```
-http http://point:8080/earns/1  #point 서비스에 직접 진입
+http http://skccuser21-point:8080/earns/1  #point 서비스에 직접 진입
 
-http http://gateway:8080/earns/1  #point 서비스에 gateway를 통해 진입(결과값 같음)
+http http://skccuser21-gateway:8080/earns/1  #point 서비스에 gateway를 통해 진입(결과값 같음)
 ```
 
 # 운영
