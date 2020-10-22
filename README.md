@@ -261,12 +261,7 @@ http http://localhost:8082/earns/1
 프로젝트 진행 시 customercenter는 H2가 아닌  hsql db를 적용하였다.
 hsql db는 application.yml 파일에는 설정하지 않았으며 customercenter의 dependencies에만 추가하여 진행하였다.
 
-<dependency>
-			<groupId>org.hsqldb</groupId>
-			<artifactId>hsqldb</artifactId>
-			<version>2.4.0</version>
-			<scope>runtime</scope>
-</dependency>
+[!image](https://user-images.githubusercontent.com/16397080/96833162-ebd36f00-147a-11eb-86a8-aef353ff2566.png)
 
 ## Saga
 
