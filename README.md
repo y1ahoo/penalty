@@ -256,7 +256,17 @@ http http://localhost:8081/checkIns/1
 http http://localhost:8082/earns/1
 
 ```
+## 폴리글랏 퍼시스턴스/폴리글랏 프로그래밍
 
+프로젝트 진행 시 customercenter는 H2가 아닌  hsql db를 적용하였다.
+hsql db는 application.yml 파일에는 설정하지 않았으며 customercenter의 dependencies에만 추가하여 진행하였다.
+
+<dependency>
+			<groupId>org.hsqldb</groupId>
+			<artifactId>hsqldb</artifactId>
+			<version>2.4.0</version>
+			<scope>runtime</scope>
+</dependency>
 
 ## Saga
 
@@ -592,14 +602,14 @@ http http://skccuser21-gateway:8080/earns/1  #point 서비스에 gateway를 통�
 
 ## Kiali
 
-* Monitoring Server - Kiali를 적용하였다. 아래는 18:19부터 1분간 호출된 서비스에 대해 Graph 형식으로 보여지는 모니터링 결과를 확인
+* Monitoring Server - Kiali를 적용하였다. 아래는 6시간 전부터 호출된 서비스에 대해 Graph 형식으로 보여지는 모니터링 결과를 확인
 
 ![image](https://user-images.githubusercontent.com/16397080/96666770-c53a0900-1392-11eb-80bf-0248fa7cba76.png)
 
 
 ## Jaeger
 
-* Tracing Server - Jaeger를 적용하였다. 아래는 18:20 이전 gateway로 동기 호출된 결과에 대해 Trace 결과를 보여주고 있음을 확인 
+* Tracing Server - Jaeger를 적용하였다. 아래는 6시간 전부터 gateway로 동기 호출된 결과에 대해 Trace 결과를 보여주고 있음을 확인 
 
 ![image](https://user-images.githubusercontent.com/16397080/96666714-ab002b00-1392-11eb-985a-7f643570ce99.png)
 
