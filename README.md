@@ -260,20 +260,10 @@ http http://localhost:8082/earns/1
 
 ## Saga
 
-checkIn 서비스에서 체크아웃 후 point 서비스에서 포인트적립을 Eventual Consistency 방식으로 처리했기 때문에 point 서비스에서 포인트 적립 처리가 완료되면 checkIn 서비스의 상태를 "EARNED"로 업데이트 시켜주는 SAGA 패턴을 적용하였다. 이 기능 역시 비동기 방식으로 checkIn의 PolicyHandler에 처리되도록 구현하였다.
+penalty 서비스에서 패널티를 받은 후 point 서비스에서 패널티 적립을 Eventual Consistency 방식으로 처리했기 때문에 point 서비스에서 패널티 적립 처리가 완료되면 penalty 서비스의 포인트를 업데이트 시켜주는 SAGA 패턴을 적용하였다. 이 기능 역시 비동기 방식으로 penalty의 PolicyHandler에 처리되도록 구현하였다.
 
 ```
-package nosmoke;
-
-import nosmoke.config.kafka.KafkaProcessor;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.stereotype.Service;
-
-import java.util.Optional;
+package nosmokepenalty;
 
 @Service
 public class PolicyHandler{
@@ -283,24 +273,20 @@ public class PolicyHandler{
     }
 
     @Autowired
-    CheckInRepository checkInRepository;
-
+    PenaltyRepository PenaltyRepository;
     @StreamListener(KafkaProcessor.INPUT)
-    public void wheneverEarned_UpdatePoint(@Payload Earned earned){
+    public void wheneverProhibited_UpdatePenalty(@Payload Prohibited prohibited) {
 
-
-        if(earned.isMe()){
-
-            Optional<CheckIn> checkInOptional = checkInRepository.findById(earned.getCheckInId());
-            CheckIn checkIn = checkInOptional.get();
-            checkIn.setPoint(earned.getPoint());
-            checkIn.setSmokingAreaId(checkIn.getSmokingAreaId());
-            checkIn.setStatus("EARNED");
-
-            checkInRepository.save(checkIn);
+        if (prohibited.isMe()) {
+            Optional<Penalty> penaltyInOptional = PenaltyRepository.findById(prohibited.getPenaltyId());
+            Penalty penalty = penaltyInOptional.get();
+            penalty.setPoint(prohibited.getPoint());
+            penalty.setId(prohibited.getPenaltyId());
+            PenaltyRepository.save(penalty);
         }
-    }
 
+
+    }
 }
 
 ```
