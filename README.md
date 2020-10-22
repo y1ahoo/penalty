@@ -132,7 +132,7 @@ CNA 개발에 요구되는 체크포인트를 만족하기 위하여 분석/설�
 
 ### 비기능 요구사항에 대한 검증
 
-![image](https://user-images.githubusercontent.com/70302884/96577805-2b7d4800-130f-11eb-8408-24367b62315c.png)
+![image](https://user-images.githubusercontent.com/16397080/96833154-e8d87e80-147a-11eb-8090-7a9073ffdf41.png)
 
     - 마이크로 서비스를 넘나드는 시나리오에 대한 트랜잭션 처리
     - 포인트 결제 처리: 포인트 차감이 완료되지 않으면 결제가 이루어지지 않아야 함.(ACID 트랜잭션 적용) 포인트 결제는 Request-Response 방식 처리
@@ -142,7 +142,7 @@ CNA 개발에 요구되는 체크포인트를 만족하기 위하여 분석/설�
 
 ## 헥사고날 아키텍처 다이어그램 도출
     
-![image](https://user-images.githubusercontent.com/70302884/96579381-b9f2c900-1311-11eb-8094-72967631ee76.png)
+![image](https://user-images.githubusercontent.com/16397080/96833164-ec6c0580-147a-11eb-9b13-01e8312871af.png)
 
 
     - Chris Richardson, MSA Patterns 참고하여 Inbound adaptor와 Outbound adaptor를 구분함
@@ -588,30 +588,33 @@ http http://skccuser21-gateway:8080/earns/1  #point 서비스에 gateway를 통�
 
 ### 오토스케일 아웃
 
-* kubectl autoscale deploy pay --min1 --max=10 --cpu-percent=15 -n tutorial로 오토스케일 설정을 완료하여 아래에서 설정된 것을 확인
+* kubectl autoscale deploy pay --min1 --max=10 --cpu-percent=15 -n tutorial로 오토스케일 설정을 완료하여 아래에서 MAXPODS 10에 도달한 것을 확인
 
-![image](https://user-images.githubusercontent.com/16397080/96666748-bce1ce00-1392-11eb-8cc9-9e4745e344c0.png)
+![image](https://user-images.githubusercontent.com/16397080/96833150-e6762480-147a-11eb-8446-4deab0d8007f.png)
 
+* checkin pod가 10개까지 오토스케일 아웃되었음
+
+![image](https://user-images.githubusercontent.com/16397080/96833101-d52d1800-147a-11eb-8af2-36ec51e4c21e.png)
 
 ## Istio 적용
 
 * Istio 모니터링 툴을 설치하고 istio를 enable 설정한 다음 deploy를 배포하여 각 pod들이side-car pattern으로 생성되어 있는 것을 확인
 
-![image](https://user-images.githubusercontent.com/16397080/96667916-f582a700-1394-11eb-825a-46a6614ac90e.png)
+![image](https://user-images.githubusercontent.com/16397080/96833166-ed049c00-147a-11eb-829f-e74ae2109abe.png)
 
 
 ## Kiali
 
 * Monitoring Server - Kiali를 적용하였다. 아래는 6시간 전부터 호출된 서비스에 대해 Graph 형식으로 보여지는 모니터링 결과를 확인
 
-![image](https://user-images.githubusercontent.com/16397080/96666770-c53a0900-1392-11eb-80bf-0248fa7cba76.png)
+![image](https://user-images.githubusercontent.com/16397080/96833160-ebd36f00-147a-11eb-8aed-05b696ab91cc.png)
 
 
 ## Jaeger
 
 * Tracing Server - Jaeger를 적용하였다. 아래는 6시간 전부터 gateway로 동기 호출된 결과에 대해 Trace 결과를 보여주고 있음을 확인 
 
-![image](https://user-images.githubusercontent.com/16397080/96666714-ab002b00-1392-11eb-985a-7f643570ce99.png)
+![image](https://user-images.githubusercontent.com/16397080/96833402-5684aa80-147b-11eb-93bd-3a47e5c52b40.png)
 
 
 
